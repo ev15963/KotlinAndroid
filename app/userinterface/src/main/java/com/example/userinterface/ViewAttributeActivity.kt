@@ -1,13 +1,12 @@
 package com.example.userinterface
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-
 import android.view.View
 import android.widget.Button
-import android.widget.TextView
-
+import android.widget.LinearLayout
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_view_attribute.*
+
 
 class ViewAttributeActivity : AppCompatActivity(), View.OnClickListener {
 //    var trueBtn : Button? = null
@@ -39,5 +38,8 @@ class ViewAttributeActivity : AppCompatActivity(), View.OnClickListener {
         }else if(v == btn_visible_false){
             text_visible_target.visibility = View.INVISIBLE
         }
+
+
+
     }
 }

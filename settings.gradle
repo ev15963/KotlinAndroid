@@ -1,3 +1,7 @@
+include ':app:varaietyview'
+include ':app:resourceuse'
+include ':eventhandling'
+include ':app:eventhandling'
 include ':app:layout'
 include ':app:userinterface'
 include ':app'

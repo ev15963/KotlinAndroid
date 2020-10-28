@@ -12,8 +12,12 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
+            <option value="$PROJECT_DIR$/app/eventhandling" />
             <option value="$PROJECT_DIR$/app/layout" />
+            <option value="$PROJECT_DIR$/app/resourceuse" />
             <option value="$PROJECT_DIR$/app/userinterface" />
+            <option value="$PROJECT_DIR$/app/varaietyview" />
+            <option value="$PROJECT_DIR$/eventhandling" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

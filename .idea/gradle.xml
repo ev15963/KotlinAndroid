@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/app/activity" />
             <option value="$PROJECT_DIR$/app/eventhandling" />
             <option value="$PROJECT_DIR$/app/layout" />
+            <option value="$PROJECT_DIR$/app/network" />
             <option value="$PROJECT_DIR$/app/resourceuse" />
             <option value="$PROJECT_DIR$/app/thread" />
             <option value="$PROJECT_DIR$/app/userinterface" />

@@ -20,7 +20,9 @@ import java.net.URL
 class TextActivity : AppCompatActivity() {
     var inputurl: EditText? = null
     var txtmsg: TextView? = null
+    var defaultUrl = "https://m.naver.com"
     var handler = Handler(Looper.getMainLooper())
+
     private fun request(urlStr: String): String {
         val output = StringBuilder()
         var result = ""
@@ -93,6 +95,6 @@ class TextActivity : AppCompatActivity() {
     }
 
     companion object {
-        var defaultUrl = "https://m.naver.com"
+
     }
 }

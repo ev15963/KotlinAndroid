@@ -12,7 +12,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.KotlinAndroid"
         android:usesCleartextTraffic="true">
-        <activity android:name=".LinkActivity"></activity>
         <activity android:name=".MovieListActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

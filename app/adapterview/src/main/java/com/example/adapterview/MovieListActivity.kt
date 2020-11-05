@@ -9,11 +9,7 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import android.view.View
-import android.widget.AbsListView
-import android.widget.AdapterView.OnItemClickListener
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import kotlinx.android.synthetic.main.activity_movie_list.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -36,14 +32,13 @@ class MovieListActivity : AppCompatActivity() {
     //var movieAdapter: ArrayAdapter<Movie>? = null
     var movieAdapter: MovieAdapter? = null
 
-    var lastitemVisibleFlag = false
-    var pageno = 1
+
 
     inner class MovieThread : Thread() {
         override fun run() {
             try {
                 //다운로드 받을 주소 생성
-                var url: URL = URL("http://cyberadam.cafe24.com/movie/list?page=${pageno}")
+                var url: URL = URL("http://cyberadam.cafe24.com/movie/list")
 
                 //연결 객체 생성
                 val con =
@@ -125,67 +120,6 @@ class MovieListActivity : AppCompatActivity() {
         downloadview.visibility = View.VISIBLE
         th = MovieThread()
         th!!.start()
-
-        listview.setOnScrollListener(object : AbsListView.OnScrollListener {
-            override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {
-                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE && lastitemVisibleFlag) {
-                    pageno = pageno + 1
-                    val cnt = 10
-                    if (pageno * cnt >= count!!) {
-                        Toast.makeText(this@MovieListActivity, "더이상의 데이터가 없습니다.", Toast.LENGTH_LONG)
-                            .show()
-                        return
-                    }
-                    if(th != null) {
-                        return
-                    }
-                    downloadview.visibility = View.VISIBLE
-                    th = MovieThread()
-                    th!!.start()
-                }
-            }
-
-            override fun onScroll(
-                view: AbsListView,
-                firstVisibleItem: Int,
-                visibleItemCount: Int,
-                totalItemCount: Int
-            ) {
-                lastitemVisibleFlag =
-                    totalItemCount > 0 && firstVisibleItem + visibleItemCount >= totalItemCount
-            }
-        })
-
-        listview.onItemClickListener =
-            OnItemClickListener { parent, view, position, id ->
-                //첫번째 매개변수는 이벤트가 발생한 ListView
-                //두번째 매개변수는 이벤트가 발생한 항목 뷰
-                //세번째 매개변수는 이벤트가 발생한 인덱스
-                //네번째 매개변수는 이벤트가 발생한 항목 뷰의 아이디
-                val movie: Movie = movieList!!.get(position)
-                val link: String = movie.link!!
-                val intent: Intent = Intent(this, LinkActivity::class.java)
-                intent.putExtra("link", link)
-                startActivity(intent)
-            }
-
-        swipe_layout.setOnRefreshListener(OnRefreshListener {
-            pageno = pageno + 1
-            val cnt = 10
-            if (pageno * cnt >= count!!) {
-                Toast.makeText(this@MovieListActivity, "더이상의 데이터가 없습니다.", Toast.LENGTH_LONG)
-                        .show()
-            }
-            else {
-                if (th != null) {
-                } else {
-                    downloadview.visibility = View.VISIBLE
-                    th = MovieThread()
-                    th!!.start()
-                    swipe_layout.setRefreshing(false)
-                }
-            }
-        })
 
     }
 }

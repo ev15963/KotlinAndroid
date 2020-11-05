@@ -84,10 +84,10 @@ class ItemInsertActivity : AppCompatActivity() {
         }
     }
 
-    internal inner class ThreadEx() : Thread() {
+    inner class ThreadEx() : Thread() {
         var json: String? = null
         override fun run() {
-            val message = Message()
+            var message = Message()
             try {
                 //다운로드 받을 주소 생성
                 val url = URL("http://cyberadam.cafe24.com/item/insert")
@@ -101,6 +101,8 @@ class ItemInsertActivity : AppCompatActivity() {
                     priceinput!!.text.toString(),
                     descritpioninput!!.text.toString()
                 )
+
+                Log.e("parameter", data.toString())
                 val dataName =
                     arrayOf("itemname", "price", "description")
                 // boundary생성 실행할때마다 다른값을 할당 : 파일 업로드가 있을 때는 반드시 생성
@@ -116,8 +118,8 @@ class ItemInsertActivity : AppCompatActivity() {
                 con.useCaches = false
 
                 // 파일 업로드가 있는 경우 설정
-                //con.setRequestProperty("ENCTYPE", "multipart/form-data")
-                //con.setRequestProperty("Content-Type", "multipart/form-databoundary=$boundary")
+                con.setRequestProperty("ENCTYPE", "multipart/form-data")
+                con.setRequestProperty("Content-Type", "multipart/form-data;boundary=$boundary")
 
                 //파라미터 생성
                 val delimiter = "--$boundary$lineEnd" // --androidupload\r\n
@@ -125,15 +127,15 @@ class ItemInsertActivity : AppCompatActivity() {
                 for (i in data.indices) {
                     postDataBuilder.append(delimiter)
                     postDataBuilder.append(
-                        "Content-Disposition: form-data name=\"" + dataName[i] + "\"" + lineEnd + lineEnd + data[i] + lineEnd
+                        "Content-Disposition: form-data; name=\"" + dataName[i] + "\"" + lineEnd + lineEnd + data[i] + lineEnd
                     )
                 }
-                val fileName: String? = null //이미지가 존재하는 경우
-                //String fileName = null //이미지가 존재하지 않는 경
+                val fileName: String? = "musa.jpeg"
+
                 // 파일이 존재할 때에만 생성
                 if (fileName != null) {
                     postDataBuilder.append(delimiter)
-                    postDataBuilder.append("Content-Disposition: form-data name=\"pictureurl\"filename=\"$fileName\"$lineEnd")
+                    postDataBuilder.append("Content-Disposition: form-data; name=\"pictureurl\";filename=\"$fileName\"$lineEnd")
                 }
 
                 //파라미터 전송
@@ -149,6 +151,7 @@ class ItemInsertActivity : AppCompatActivity() {
                     var length = -1
                     while ((fres.read(buffer).also { length = it }) != -1) {
                         ds.write(buffer, 0, length)
+                        Log.e("d", buffer.toString())
                     }
                     ds.writeBytes(lineEnd)
                     ds.writeBytes(lineEnd)
@@ -177,7 +180,6 @@ class ItemInsertActivity : AppCompatActivity() {
                 br.close()
                 con.disconnect()
                 json = sb.toString()
-                Log.e("1", json.toString())
             } catch (e: Exception) {
                 Log.e("삽입 예외", (e.message)!!)
                 message.obj = "삽입 에러로 파라미터 전송에 실패했거나 다운로드 실패\n서버를 확인하거나 파라미터 전송 부분을 확인하세요"
@@ -187,7 +189,7 @@ class ItemInsertActivity : AppCompatActivity() {
             if (json != null) {
                 try {
                     val `object` = JSONObject(json)
-                    val result = `object`.getBoolean("insert")
+                    val result = `object`.getBoolean("result")
                     message.obj = result
                     message.what = 1
                     handler.sendMessage(message)
@@ -196,6 +198,7 @@ class ItemInsertActivity : AppCompatActivity() {
                 }
             } else {
                 Log.e("파싱 실패", "데이터가 포맷에 맞지 않음")
+                message = Message()
                 message.obj = "파싱 실패"
                 message.what = 0
                 handler.sendMessage(message)

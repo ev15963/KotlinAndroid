@@ -1,3 +1,5 @@
+include ':app:supportlibrary'
+include ':app:adapterview'
 include ':app:persistentstorage2'
 include ':app:persistentstorage'
 include ':app:network'

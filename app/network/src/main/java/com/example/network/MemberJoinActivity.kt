@@ -83,7 +83,7 @@ class MemberJoinActivity : AppCompatActivity() {
 
                 //파일 첨부가 있는 경우 생성
                 con.setRequestProperty("ENCTYPE", "multipart/form-data")
-                con.setRequestProperty("Content-Type", "multipart/form-databoundary=$boundary")
+                con.setRequestProperty("Content-Type", "multipart/form-data;boundary=$boundary")
                 val delimiter = "--$boundary$lineEnd" // --androidupload\r\n
                 val postDataBuilder = StringBuffer()
                 //파라미터를 하나로 만들기
@@ -91,7 +91,7 @@ class MemberJoinActivity : AppCompatActivity() {
                 while (i < data.size) {
                     postDataBuilder.append(delimiter)
                     postDataBuilder.append(
-                        "Content-Disposition: form-data name=\"" + dataName[i] + "\"" + lineEnd + lineEnd + data[i] + lineEnd
+                        "Content-Disposition: form-data; name=\"" + dataName[i] + "\"" + lineEnd + lineEnd + data[i] + lineEnd
                     )
                     i = i + 1
                 }
@@ -100,7 +100,7 @@ class MemberJoinActivity : AppCompatActivity() {
                 //String fileName = null
                 if (fileName != null) {
                     postDataBuilder.append(delimiter)
-                    postDataBuilder.append("Content-Disposition: form-data name=\"profile\"filename=\"$fileName\"$lineEnd")
+                    postDataBuilder.append("Content-Disposition: form-data; name=\"profile\";filename=\"$fileName\"$lineEnd")
                 }
                 //파라미터 전송
                 val ds = DataOutputStream(con.getOutputStream())

@@ -1,32 +1,39 @@
 package com.example.supportlibrary
 
 
+import android.R.id
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.ViewCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.navigation.NavigationView
 import kotlinx.android.synthetic.main.activity_recycler.*
 
 
 class RecyclerActivity : AppCompatActivity() {
-    private val TYPE_HEADER = 0
-    private val TYPE_ITEM = 1
-    private val TYPE_FOOTER = 2
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recycler)
+
+
 
         val list: MutableList<String> = ArrayList()
         list.add("태연")
@@ -56,11 +63,12 @@ class RecyclerActivity : AppCompatActivity() {
         list.add("효연")
         list.add("윤아")
         list.add("서현")
+
         recycler. setLayoutManager(LinearLayoutManager(this))
         recycler.adapter = MyAdapter(list)
         recycler.addItemDecoration(MyItemDecoration())
 
-        btn.setOnClickListener({
+        btn.setOnClickListener {
             val smoothScroller: RecyclerView.SmoothScroller by lazy {
                 object : LinearSmoothScroller(this@RecyclerActivity) {
                     override fun getVerticalSnapPreference() = SNAP_TO_START
@@ -68,19 +76,32 @@ class RecyclerActivity : AppCompatActivity() {
             }
             smoothScroller.targetPosition = 0
             recycler.layoutManager?.startSmoothScroll(smoothScroller)
-        })
+        }
 
     }
+
 
 
     internal class HeaderViewHolder(headerView: View?) :
         RecyclerView.ViewHolder(headerView!!)
 
-    class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var title: TextView
+    internal class FooterViewHolder(footerView: View?) :
+        RecyclerView.ViewHolder(footerView!!)
 
+    class MyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView), View.OnClickListener {
+        var title: TextView
         init {
             title = itemView.findViewById(android.R.id.text1)
+        }
+
+        fun onBind(data: String) {
+            title.setText(data.toString())
+            itemView.setOnClickListener(this)
+        }
+
+        override fun onClick(v: View) {
+           Toast.makeText(title.context, title.text, Toast.LENGTH_SHORT)
+                    .show()
         }
     }
 
@@ -91,8 +112,10 @@ class RecyclerActivity : AppCompatActivity() {
                 val view =
                     LayoutInflater.from(viewGroup.context).inflate(R.layout.header, viewGroup, false)
                 return HeaderViewHolder(view)
+            } else if (i == 2) {
+                val view = LayoutInflater.from(viewGroup.context).inflate(R.layout.footer, viewGroup, false);
+                return FooterViewHolder(view);
             }else {
-
                 val view = LayoutInflater.from(viewGroup.context)
                     .inflate(android.R.layout.simple_list_item_1, viewGroup, false)
                 return MyViewHolder(view)
@@ -100,19 +123,28 @@ class RecyclerActivity : AppCompatActivity() {
         }
 
         override fun getItemCount(): Int {
-            return list.size
+            return list.size + 2
         }
 
         override fun onBindViewHolder(myViewHolder: RecyclerView.ViewHolder, i: Int) {
-            if(i !== 0) {
-                val text = list[i]
-                (myViewHolder as MyViewHolder).title.text = text
+            if (myViewHolder is HeaderViewHolder) {
+                val headerViewHolder = myViewHolder as HeaderViewHolder
+            } else if (myViewHolder is FooterViewHolder) {
+                val footerViewHolder = myViewHolder as FooterViewHolder
+            } else {
+                // Item을 하나, 하나 보여주는(bind 되는) 함수입니다.
+                val itemViewHolder: MyViewHolder = myViewHolder as MyViewHolder
+                itemViewHolder.onBind(list.get(i - 1))
             }
         }
 
         override fun getItemViewType(position: Int): Int {
-            return if (position == 0) 0
-            else 1
+            if (position == 0)
+                return 0;
+            else if (position == list.size + 1)
+                return 2;
+            else
+                return 1;
         }
     }
 
@@ -144,7 +176,6 @@ class RecyclerActivity : AppCompatActivity() {
             val left  = width / 2 - drWidth / 2
             val top = height / 2 - drHeight / 2
             c.drawBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.img), left.toFloat(), top.toFloat(), null)
-
         }
     }
 }

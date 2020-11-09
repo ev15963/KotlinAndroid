@@ -9,7 +9,11 @@ import android.os.Looper
 import android.os.Message
 import android.util.Log
 import android.view.View
+import android.widget.AbsListView
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlinx.android.synthetic.main.activity_movie_list.*
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -20,29 +24,38 @@ import java.net.URL
 
 class MovieListActivity : AppCompatActivity() {
     //다운로드 받은 문자열을 저장하기 위한 프로퍼티
-    var json:String? = null
+    var json: String? = null
+
     //다운로드 스레드를 위한 프로퍼티
-    var th : MovieThread? = null
+    var th: MovieThread? = null
+
     //데이터 목록을 저장할 리스트
-    var movieList : MutableList<Movie>? = null
+    var movieList: MutableList<Movie>? = null
+
     //데이터 개수를 저장할 변수
-    var count:Int? = null
+    var count: Int? = null
 
     //ListView에 출력하기 위한 Adapter
     //var movieAdapter: ArrayAdapter<Movie>? = null
     var movieAdapter: MovieAdapter? = null
 
+    //가장 하단에서 스크롤 했는지 확인하기 위한 프로퍼티
+    var lastitemVisibleFlag = false
 
+    //페이지 번호를 저장하기 위한 프로퍼티
+    var pageno = 1
 
     inner class MovieThread : Thread() {
         override fun run() {
             try {
                 //다운로드 받을 주소 생성
-                var url: URL = URL("http://cyberadam.cafe24.com/movie/list")
+                //var url: URL = URL("http://cyberadam.cafe24.com/movie/list")
+                var url: URL = URL("http://cyberadam.cafe24.com/movie/list?page=${pageno}")
+
 
                 //연결 객체 생성
                 val con =
-                    url!!.openConnection() as HttpURLConnection
+                        url!!.openConnection() as HttpURLConnection
                 //옵션 설정
                 con.requestMethod = "GET" //전송 방식 선택
                 con.useCaches = false //캐시 사용 여부 설정
@@ -52,7 +65,7 @@ class MovieListActivity : AppCompatActivity() {
                 con.doInput = true //입력 사용
                 //문자열을 다운로드 받기 위한 스트림을 생성
                 val br =
-                    BufferedReader(InputStreamReader(con.inputStream))
+                        BufferedReader(InputStreamReader(con.inputStream))
                 val sb: StringBuilder = StringBuilder()
                 //문자열을 읽어서 저장
                 while (true) {
@@ -70,7 +83,7 @@ class MovieListActivity : AppCompatActivity() {
             }
 
             //json 파싱
-            if(json!!.trim().length > 0){
+            if (json!!.trim().length > 0) {
                 val data = JSONObject(json)
                 count = data.getInt("count")
                 val list = data.getJSONArray("list")
@@ -85,7 +98,7 @@ class MovieListActivity : AppCompatActivity() {
                     movie.rating = item.getDouble("rating")
                     movie.thumbnail = item.getString("thumbnail")
                     movie.link = item.getString("link")
-                    movieList!!.add(movie)
+                    movieList!!.add(0,movie)
                     i = i + 1
                 }
                 Log.e("파싱 결과 - count", "${count}")
@@ -95,8 +108,8 @@ class MovieListActivity : AppCompatActivity() {
         }
     }
 
-    val handler : Handler = object: Handler(Looper.getMainLooper()){
-        override fun handleMessage(msg: Message){
+    val handler: Handler = object : Handler(Looper.getMainLooper()) {
+        override fun handleMessage(msg: Message) {
             movieAdapter!!.notifyDataSetChanged()
             downloadview.visibility = View.GONE
             th = null
@@ -108,18 +121,77 @@ class MovieListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_movie_list)
         movieList = mutableListOf<Movie>()
         movieAdapter = MovieAdapter(
-            this, movieList!!, R.layout.movie_cell)
+                this, movieList!!, R.layout.movie_cell)
 
         listview.adapter = movieAdapter
         listview.setDivider(ColorDrawable(Color.RED))
         listview.setDividerHeight(3)
 
-        if(th != null) {
+        if (th != null) {
             return
         }
         downloadview.visibility = View.VISIBLE
         th = MovieThread()
         th!!.start()
 
+        listview.onItemClickListener =
+                OnItemClickListener { parent, view, position, id ->
+                    //첫번째 매개변수는 이벤트가 발생한 ListView
+                    //두번째 매개변수는 이벤트가 발생한 항목 뷰
+                    //세번째 매개변수는 이벤트가 발생한 인덱스
+                    //네번째 매개변수는 이벤트가 발생한 항목 뷰의 아이디
+                    val movie: Movie = movieList!!.get(position)
+                    val link: String = movie.link!!
+                    val intent: Intent = Intent(this, LinkActivity::class.java)
+                    intent.putExtra("link", link)
+                    startActivity(intent)
+                }
+
+        listview.setOnScrollListener(object : AbsListView.OnScrollListener {
+            override fun onScrollStateChanged(view: AbsListView, scrollState: Int) {
+                if (scrollState == AbsListView.OnScrollListener.SCROLL_STATE_IDLE && lastitemVisibleFlag) {
+                    pageno = pageno + 1
+                    val cnt = 10
+                    if (pageno * cnt >= count!!) {
+                        Toast.makeText(this@MovieListActivity, "더이상의 데이터가 없습니다.", Toast.LENGTH_LONG)
+                                .show()
+                        return
+                    }
+                    if (th != null) {
+                        return
+                    }
+                    downloadview.visibility = View.VISIBLE
+                    th = MovieThread()
+                    th!!.start()
+                }
+            }
+
+            override fun onScroll(
+                    view: AbsListView,
+                    firstVisibleItem: Int,
+                    visibleItemCount: Int,
+                    totalItemCount: Int
+            ) {
+                lastitemVisibleFlag =
+                        totalItemCount > 0 && firstVisibleItem + visibleItemCount >= totalItemCount
+            }
+        })
+
+        swipe_layout.setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener {
+            pageno = pageno + 1
+            val cnt = 10
+            if (pageno * cnt >= count!!) {
+                Toast.makeText(this@MovieListActivity, "더이상의 데이터가 없습니다.", Toast.LENGTH_LONG)
+                        .show()
+            } else {
+                if (th != null) {
+                } else {
+                    downloadview.visibility = View.VISIBLE
+                    th = MovieThread()
+                    th!!.start()
+                    swipe_layout.setRefreshing(false)
+                }
+            }
+        })
     }
 }

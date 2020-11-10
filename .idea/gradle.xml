@@ -31,6 +31,7 @@
             <option value="$PROJECT_DIR$/app/userinterface" />
             <option value="$PROJECT_DIR$/app/varaietyview" />
             <option value="$PROJECT_DIR$/eventhandling" />
+            <option value="$PROJECT_DIR$/gpsmap" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

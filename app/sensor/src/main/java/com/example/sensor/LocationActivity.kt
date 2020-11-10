@@ -104,6 +104,5 @@ class LocationActivity : AppCompatActivity(), AutoPermissionsListener {
         })
 
         loadAllPermissions(this, 101)
-
     }
 }

@@ -21,7 +21,7 @@
 
         <!-- 구글 클라우드 플랫폼에서 발급받은 API 키를 여기에 -->
         <meta-data android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyD_rzZKsEWastSjB3mwORSVGzWwZxhV9fM"/>
+            android:value="AIzaSyDCrRJAThYANMEH_TKkDMn-w9s6M4Gf3cg"/>
         <!-- 구글 플레이 서비스 버전을 적는 곳으로 그대로 타이핑 -->
         <meta-data android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version"/>

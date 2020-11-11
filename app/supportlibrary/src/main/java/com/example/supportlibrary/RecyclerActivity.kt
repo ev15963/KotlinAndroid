@@ -26,15 +26,9 @@ import kotlinx.android.synthetic.main.activity_recycler.*
 
 
 class RecyclerActivity : AppCompatActivity() {
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recycler)
-
-
-
         val list: MutableList<String> = ArrayList()
         list.add("태연")
         list.add("제시카")
@@ -68,19 +62,7 @@ class RecyclerActivity : AppCompatActivity() {
         recycler.adapter = MyAdapter(list)
         recycler.addItemDecoration(MyItemDecoration())
 
-        btn.setOnClickListener {
-            val smoothScroller: RecyclerView.SmoothScroller by lazy {
-                object : LinearSmoothScroller(this@RecyclerActivity) {
-                    override fun getVerticalSnapPreference() = SNAP_TO_START
-                }
-            }
-            smoothScroller.targetPosition = 0
-            recycler.layoutManager?.startSmoothScroll(smoothScroller)
-        }
-
     }
-
-
 
     internal class HeaderViewHolder(headerView: View?) :
         RecyclerView.ViewHolder(headerView!!)

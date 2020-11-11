@@ -1,3 +1,4 @@
+include ':app:fcm'
 include ':gpsmap'
 include ':app:sensor'
 include ':app:multimedia'

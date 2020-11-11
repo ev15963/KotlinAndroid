@@ -9,8 +9,10 @@ import android.graphics.drawable.BitmapDrawable
 import android.location.Location
 import android.location.LocationManager
 import android.os.*
+import android.text.TextUtils
 import androidx.appcompat.app.AppCompatActivity
 import android.util.Log
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -26,6 +28,7 @@ import org.json.JSONObject
 import java.net.URL
 
 import kotlinx.android.synthetic.main.activity_seoul_toilet.*
+import kotlinx.android.synthetic.main.search_bar.view.*
 
 class SeoulToiletActivity : AppCompatActivity() {
     // 런타임에서 권한이 필요한 퍼미션 목록
@@ -56,7 +59,7 @@ class SeoulToiletActivity : AppCompatActivity() {
         // 마지막으로 업데이트된 위치를 가져옴
         val lastKnownLocation: Location? = locationManager.getLastKnownLocation(locationProvider)
         // 위도 경도 객체로 반환
-        return LatLng(lastKnownLocation!!.latitude, lastKnownLocation!!.longitude)
+        return LatLng(lastKnownLocation!!.latitude, lastKnownLocation.longitude)
     }
 
     // 앱에서 사용하는 권한이 있는지 체크하는 함수
@@ -79,18 +82,20 @@ class SeoulToiletActivity : AppCompatActivity() {
     // ClusterRenderer 변수 선언
     var clusterRenderer: ClusterRenderer? = null
 
+
     // 맵 초기화하는 함수
     @SuppressLint("MissingPermission")
     fun initMap() {
         // 맵뷰에서 구글 맵을 불러오는 함수. 콜백함수에서 구글 맵 객체가 전달됨
         mapView.getMapAsync {
-            // ClusterManager 객체 초기화
-            clusterManager = ClusterManager(this, it)
-            clusterRenderer = ClusterRenderer(this, it, clusterManager)
 
-            // OnCameraIdleListener 와 OnMarkerClickListener 를 clusterManager 로 지정
-            it.setOnCameraIdleListener(clusterManager)
-            it.setOnMarkerClickListener(clusterManager)
+               // ClusterManager 객체 초기화
+               clusterManager = ClusterManager(this, it)
+               clusterRenderer = ClusterRenderer(this, it, clusterManager)
+
+               // OnCameraIdleListener 와 OnMarkerClickListener 를 clusterManager 로 지정
+               it.setOnCameraIdleListener(clusterManager)
+               it.setOnMarkerClickListener(clusterManager)
 
             // 구글맵 멤버 변수에 구글맵 객체 저장
             googleMap = it
@@ -116,6 +121,7 @@ class SeoulToiletActivity : AppCompatActivity() {
             }
         }
     }
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>,
@@ -181,7 +187,7 @@ class SeoulToiletActivity : AppCompatActivity() {
     val API_KEY = "6f74435a7367676135384143515370"
 
     //화장실의 위도와 경도 및 이름 들을 저장할 Map 의 List 생성
-    val toiletList: MutableList<Map<String, Any>> = mutableListOf<Map<String, Any>>()
+    var toiletList: MutableList<Map<String, Any>> = mutableListOf<Map<String, Any>>()
 
     // 화장실 이미지로 사용할 Bitmap
     val bitmap by lazy {
@@ -192,6 +198,7 @@ class SeoulToiletActivity : AppCompatActivity() {
     //다운로드 받아서 파싱할 스레드
     inner class ToiletThread : Thread() {
         override fun run() {
+            toiletList.clear()
             //데이터의 시작과 종료 인덱스
             var startIdx = 1
             var endIdx = 1000
@@ -231,19 +238,37 @@ class SeoulToiletActivity : AppCompatActivity() {
 
     val handler: Handler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
-            Log.e("toiletList", toiletList.toString())
-            for (map in toiletList) {
-                addMarkers(map as MutableMap<String, Any>)
+                clusterManager?.clearItems()
+                clusterManager?.clusterMarkerCollection!!.clear()
+                for (map in toiletList) {
+                    addMarkers(map as MutableMap<String, Any>)
+                }
+                // clusterManager 의 클러스터링 실행
+                clusterManager?.cluster()
+
+            // 자동완성 텍스트뷰(AutoCompleteTextView) 에서 사용할 텍스트 리스트
+            val textList = mutableListOf<String>()
+            // 모든 화장실의 이름을 텍스트 리스트에 추가
+            for (i in 0 until toiletList.size) {
+                val toilet = toiletList.get(i)
+                textList.add(toilet.get("FNAME") as String)
             }
-            // clusterManager 의 클러스터링 실행
-            clusterManager?.cluster()
+            // 자동완성 텍스트뷰에서 사용하는 어댑터 추가
+            val adapter = ArrayAdapter<String>(
+                this@SeoulToiletActivity,
+                android.R.layout.simple_dropdown_item_1line, textList
+            )
+            // 자동완성이 시작되는 글자수 지정
+            searchBar.autoCompleteTextView.threshold = 1
+            // autoCompleteTextView 의 어댑터를 상단에서 만든 어댑터로 지정
+            searchBar.autoCompleteTextView.setAdapter(adapter)
 
         }
     }
 
 
     // 마커를 추가하는 함수
-    fun addMarkers(toilet: MutableMap<String, Any>) {
+    private fun addMarkers(toilet: MutableMap<String, Any>) {
 //        googleMap?.addMarker(
 //            MarkerOptions()
 //                .position(LatLng(toilet.get("Lat") as Double, toilet.get("Lng") as Double))
@@ -252,14 +277,13 @@ class SeoulToiletActivity : AppCompatActivity() {
 //                .icon(BitmapDescriptorFactory.fromBitmap(bitmap))
 //        )
         // clusterManager 를 이용해 마커 추가
-        clusterManager?.addItem(
-            MyItem(
-                LatLng(toilet.get("Lat") as Double, toilet.get("Lng") as Double),
-                toilet.get("FNAME") as String,
-                toilet.get("ANAME") as String,
-                BitmapDescriptorFactory.fromBitmap(bitmap)
-            )
+        val myItem = MyItem(
+            LatLng(toilet.get("Lat") as Double, toilet.get("Lng") as Double),
+            toilet.get("FNAME") as String,
+            toilet.get("ANAME") as String,
+            BitmapDescriptorFactory.fromBitmap(bitmap)
         )
+        clusterManager?.addItem(myItem)
     }
 
     var toiletThread: ToiletThread? = null
@@ -271,6 +295,23 @@ class SeoulToiletActivity : AppCompatActivity() {
             toiletThread = ToiletThread()
             toiletThread!!.start()
         }
+
+        // searchBar 의 검색 아이콘의 이벤트 리스너 설정
+        searchBar.imageView.setOnClickListener {
+            // autoCompleteTextView 의 텍스트를 읽어 키워드로 가져옴
+            val keyword = searchBar.autoCompleteTextView.text.toString()
+            if(keyword.trim().length == 0){
+                Log.e("글자", "없음")
+                    toiletThread = ToiletThread()
+                    toiletThread!!.start()
+            }else {
+                val toiletThread1 = ToiletThread1(keyword)
+                toiletThread1.start()
+            }
+            // 검색 텍스트뷰의 텍스트를 지운다.
+            searchBar.autoCompleteTextView.setText("")
+        }
+
     }
 
     // 앱이 비활성화 될때 백그라운드 작업 취소
@@ -278,5 +319,48 @@ class SeoulToiletActivity : AppCompatActivity() {
         super.onStop()
         toiletThread!!.isInterrupted
         toiletThread = null
+    }
+
+    //다운로드 받아서 파싱할 스레드
+    inner class ToiletThread1(var keyword:String) : Thread() {
+        override fun run() {
+            toiletList.clear()
+            //데이터의 시작과 종료 인덱스
+            var startIdx = 1
+            var endIdx = 1000
+            //데이터의 전체 개수를 저장하기 위한 프로퍼티
+            var count = 0
+            do {
+                //파싱할 URL 생성
+                var url =
+                    URL("http://openAPI.seoul.go.kr:8088" + "/${API_KEY}/json/SearchPublicToiletPOIService/${startIdx}/${endIdx}")
+                //연결해서 문자열 가져오기
+                val connection = url.openConnection()
+                val data = connection.getInputStream().readBytes().toString(charset("UTF-8"))
+                //JSON 파싱
+                val jsonData = JSONObject(data)
+                val root = jsonData.getJSONObject("SearchPublicToiletPOIService")
+                if (count == 0) {
+                    count = root.getInt("list_total_count")
+                }
+                val row = root.getJSONArray("row")
+                for (i in 0 until row.length()) {
+                    val obj = row.getJSONObject(i)
+                    val map = mutableMapOf<String, Any>()
+                    if( obj.getString("FNAME").contains(keyword.trim())) {
+                        map.put("FNAME", obj.getString("FNAME"))
+                        map.put("ANAME", obj.getString("ANAME"))
+                        map.put("Lat", obj.getDouble("Y_WGS84"))
+                        map.put("Lng", obj.getDouble("X_WGS84"))
+                        Log.e("map", map.toString())
+                        toiletList.add(map)
+                    }
+                }
+                //인덱스를 변경해서 데이터 계속 가져오기
+                startIdx = startIdx + 1000
+                endIdx = endIdx + 1000
+            } while (startIdx < count)
+            handler.sendEmptyMessage(0)
+        }
     }
 }
